@@ -1,0 +1,12 @@
+name: producao_entrevistadores_pnds
+title: producao_entrevistadores_pnds
+username: eduardo-leoni
+account: eduardo-leoni
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 10677907
+bundleId: 7989867
+url: https://eduardo-leoni.shinyapps.io/producao_entrevistadores_pnds/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
