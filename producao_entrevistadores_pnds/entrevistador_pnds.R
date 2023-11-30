@@ -1,29 +1,4 @@
 #' @export
-extract_siape_entrevistadores <- function(z, j) {
-  regex_entrevistador <- "([0-9]+)[^\\|]*\\|*([0-9]+)*.*"#gsub(, "\\2", )
-  gsub(x = z, replacement = paste0("\\",j), pattern=regex_entrevistador)%>%dplyr::na_if("")
-}
-
-
-#' example
-#' m <- structure(list(siapes_1 = c("1177818 - TASSIA SILVA DOS REIS ", "1177818 - TASSIA SILVA DOS REIS |1295180 - HUMBERTO RODRIGO SILVA E SILVA"), siapes_2 = c("1177818 - TASSIA SILVA DOS REIS |1295180 - HUMBERTO RODRIGO SILVA E SILVA", "1295180 - HUMBERTO RODRIGO SILVA E SILVA|1177818 - TASSIA SILVA DOS REIS")), row.names = c(NA, -2L), class = c("tbl_df", "tbl", "data.frame"))
-#' lc_entrevistador(m, siapes_1)
-#'
-#' @export
-# lc_entrevistador <- function(data, var) {
-#   data <- dplyr::mutate(data,
-#                         v_1 = extract_siape_entrevistadores({{ var }}, 1),
-#                         v_2 = extract_siape_entrevistadores({{ var }}, 2)
-#   ) %>% select(-{{ var }})
-#   data %>%
-#     rowwise() %>%
-#     mutate("{{var}}" := list(c(v_1, v_2) %>% na.omit())) %>%
-#     select(-v_1, -v_2)
-# }
-lc_entrevistador <- function(data, var) {
-  tidyr::separate_longer_delim(data, {{var}}, delim="|")
-}
-
 #' @export
 separate_entrevistador <- function(data,cols, names, delim_wide=" - ",
                                    delim_long="|",
@@ -100,29 +75,10 @@ producao_entrevistador <- function(ultimo_movimento, gerencial_compilado_1) {
     summarise(n_quadro_entrevistador=sum(w_quadro))%>%
     ungroup
 
-  # nome_siape_um <- um_rec_uf%>%
-  #   distinct(entrevistador)%>%
-  #   tidyr::separate_wider_delim(entrevistador, delim=" - ", names=c("siape", "nome"), too_few = "align_start")
-  #
-  # nome_siape_selecionado <- entrevistadores_selecionados_0%>%
-  #   distinct(entrevistador)
-  # %>%
-  #   tidyr::separate_wider_delim(entrevistador, delim=" - ", names=c("siape", "nome"), too_few = "align_start")
-
-
   entrevistadores_status <- entrevistadores_nao_selecionados_0%>%
-    bind_rows(entrevistadores_selecionados_0)#%>%left_join(rh_siape%>%select(entrevistador_associado=siape, sexo_entrevistador_associado=sexo))
+    bind_rows(entrevistadores_selecionados_0)
 
   stopifnot((entrevistadores_status%>%ungroup%>%distinct(controle, domicilio)%>%nrow)==nrow(um_rec_uf))
-
-  # nome_siape <- entrevistadores_status%>%
-  #   reframe(entrevistador=union(entrevistador_associado_siape, entrevistador_selecionado))%>%
-  #   bind_rows(entrevistadores_quadro%>%select(entrevistador))%>%
-  #   mutate(entrevistador=trimws(entrevistador))%>%
-  #   tidyr::separate_wider_delim(entrevistador, names=c("entrevistador_siape", "entrevistador_nome"), delim=" - ",
-  #                               too_few="align_start")%>%
-  #   mutate(across(everything(), ~tidyr::replace_na(.x, "Sem informação")))%>%
-  #   unique
 
   entrevistadores_coleta <- entrevistadores_status%>%
     mutate(entrevistador_siape=coalesce(entrevistador_selecionado_siape, entrevistador_associado_siape),
@@ -146,26 +102,5 @@ producao_entrevistador <- function(ultimo_movimento, gerencial_compilado_1) {
   entrevistadores_coleta_export <- entrevistadores_coleta%>%
     arrange(agencia_nome, desc(quadro_mais_selecionado))%>%
     select(agencia_codigo, agencia_nome, entrevistador_siape, entrevistador_nome, quadro_mais_selecionado,  everything())
-    # transmute(#assistencia_nome,
-    #   Agência=agencia_nome, Siape=entrevistador,
-    #   #Nome=coalesce(nome, nome_siape),
-    #   Nome=nome,
-    #   #Sexo=sexo,
-    #   #Cargo=cargo_nome, Email=email,
-    #   # não colocar domicílios total para não confundir: não é o número de associados, nem soma para o total de domicílios na unidade
-    #   #`Domicílios Total`=domicilios_total,
-    #   `Quadro de morador preenchido`=quadros,
-    #   `Selecionado Respondido`,
-    #           "Quadro preenchido + Selecionado Respondido"=quadro_mais_selecionado, "Recusa de selecionado ou do Domicílio"=Recusa+`Selecionado Recusa`, `Sem informação`,
-    #           pick(any_of(c(
-    #             "Selecionado Incapaz",
-    #             "Selecionado em andamento",
-    #             "Coletivo/obra/ruína/demolido/não residencial", "Não encontrado/fora do setor", "Ocasional/Vago", "Outro motivo"))))
-    #
   return(entrevistadores_coleta_export)
-  #entrevistadores_coleta_export_list <- entrevistadores_coleta_export%>%split(.$assistencia_nome)%>%purrr::map(~select(.x,-assistencia_nome)%>%janitor::adorn_totals(name = "TOTAL"))
-
-  #readr::write_rds(entrevistadores_coleta_export_list, "data/entrevistadores_coleta_export_list.rds")
-
-  #excel(entrevistadores_coleta_export_list, filename = "results/producao_entrevistador.xlsx", firstrow = paste0("Relatório: ", format(lubridate::with_tz(um_rec_uf$relatorio_data_hora[1], tz=""), "%d/%m/%y %R")), open=FALSE)
 }
