@@ -8,7 +8,7 @@
 #
 
 library(shiny)
-source("entrevistador_pnds.R")
+source("R/entrevistador_pnds.R")
 
 ui_upload <- sidebarLayout(
     sidebarPanel(

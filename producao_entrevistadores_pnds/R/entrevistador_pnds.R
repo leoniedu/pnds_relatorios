@@ -1,9 +1,10 @@
 #' @export
-#' @export
-separate_entrevistador <- function(data,cols, names, delim_wide=" - ",
+separate_entrevistador <- function(data,cols, names=c("entrevistador_siape", "entrevistador_nome"), delim_wide=" - ",
                                    delim_long="|",
                                    replace_na="Sem informação", too_few = "align_start") {
-  data <- tidyr::separate_longer_delim(data, {{cols}}, delim=delim_long)
+  if (nrow(data%>%filter(grepl(delim_long,{{cols}})))>0) {
+    data <- tidyr::separate_longer_delim(data, {{cols}}, delim=delim_long)
+  }
   res <- data%>%tidyr::separate_wider_delim(cols={{cols}}, names=names, too_few = "align_start", delim=delim_wide)
   res%>%mutate(across(all_of(names), function(x) trimws(x)%>%
                         dplyr::na_if("")%>%
@@ -51,9 +52,6 @@ producao_entrevistador <- function(ultimo_movimento, gerencial_compilado_1) {
              #, sexo_entrevistador_selecionado,
              ,tipo_entrevista, #tipo_entrevista_rec,
              status_quadro_moradores, status_nucleo_basico, w_selecionado)
-
-
-
   entrevistadores_nao_selecionados_0 <- um_rec_uf%>%
     anti_join(entrevistadores_selecionados_0, by=c("controle", "domicilio"))%>%
     transmute(controle, domicilio, entrevistador_associado_nome, entrevistador_associado_siape, tipo_entrevista, #tipo_entrevista_rec,
